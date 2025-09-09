@@ -117,9 +117,9 @@ def get_ai_response(user_id, chat_id, user_message):
 
     headers = {"Authorization": f"Bearer {GROQ_API_KEY}", "Content-Type": "application/json"}
     
-    # === YAHAN PAR AAKHRI BADLAAV KIYA GAYA HAI ===
-    payload = {"model": "mixtral-8x7b-32768", "messages": messages_to_send}
-    # =============================================
+    # === AAPKE WEBSOCKET WALE CODE SE SAHI MODEL LIYA GAYA HAI ===
+    payload = {"model": "llama3-8b-8192", "messages": messages_to_send}
+    # ===================================================================
 
     try:
         api_response = requests.post(GROQ_API_URL, headers=headers, json=payload, timeout=20)
