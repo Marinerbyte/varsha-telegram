@@ -118,7 +118,7 @@ def get_ai_response(user_id, chat_id, user_message):
     headers = {"Authorization": f"Bearer {GROQ_API_KEY}", "Content-Type": "application/json"}
     
     # === AAPKE WEBSOCKET WALE CODE SE SAHI MODEL LIYA GAYA HAI ===
-    payload = {"model": "llama3-8b-8192", "messages": messages_to_send}
+    payload = {"model": "llama-3.1-8b-instant", "messages": messages_to_send}
     # ===================================================================
 
     try:
