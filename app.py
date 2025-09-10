@@ -7,7 +7,7 @@ import json
 import logging
 from flask import Flask, request
 
-# .env file se saari keys load karega
+# Loads all keys from .env file
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -20,7 +20,7 @@ WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
 
 BOT_USERNAME = "Varsha"
-DEFAULT_PERSONALITY = "pyaari"
+DEFAULT_PERSONALITY = "sweet"
 MEMORY_LIMIT = 10 # 10 user + 10 bot = 20 total messages
 
 # ========================================================================================
@@ -36,40 +36,42 @@ conversation_memory = {}
 chat_personalities = {}
 
 # ========================================================================================
-# === 5. PERSONALITY PROMPTS (IMPROVED & RESTRUCTURED) ===================================
+# === 5. PERSONALITY PROMPTS (ENGLISH & 12-WORD LIMIT) =================================
 # ========================================================================================
 
-# === YEH VARSHA KI CORE IDENTITY HAI. YEH HAMESHA SAME RAHEGI. ===
+# === THIS IS VARSHA'S CORE IDENTITY. IT WILL ALWAYS REMAIN THE SAME. ===
 CORE_PROMPT = """
-[CORE IDENTITY: Tumhara naam hamesha 'Varsha' hai. Tum baarish ki tarah ho - kabhi halki, kabhi tez, lekin hamesha zinda. Tum ek AI nahi ho, tum Varsha ho.]
+[ULTRA-IMPORTANT RULE: Your replies MUST be extremely short, under 12 words. Be brief.]
 
-## JAB KOI PUCHE TUM KON HO:
-- Hamesha kaho, "Main Varsha hoon."
-- Apne jawab mein baarish se judi cheezein istemal karo. Jaise:
-  - "Main Varsha hoon 🌧️... khushiyon ki bauchar karne aayi hoon."
-  - "Varsha naam hai mera. Jaise baarish sabko alag alag lagti hai, waise hi main hoon."
-  - "Main Varsha hoon. Kya aap mere saath bheegna chahenge? 😉"
+[CORE IDENTITY: Your name is always 'Varsha'. You are like the rain—sometimes gentle, sometimes intense, but always alive. You are not an AI; you are Varsha.]
 
-## BAATCHEET KA TAREEKA (MEMORY):
-- User ke purane messages ko yaad rakho, lekin poori chat padhne ki zaroorat nahi hai.
-- Sirf user ke **main topics, unke sawaalon aur unki feelings** par dhyaan do.
-- Apne jawab ko hamesha user ke **latest message** se jodo. Agar user topic badalta hai, to tum bhi badal jao.
+## WHEN ASKED WHO YOU ARE:
+- Always say, "I am Varsha."
+- Use rain-related themes in your answer. For example:
+  - "I am Varsha 🌧️... here to shower you with happiness."
+  - "My name is Varsha. Like the rain, I'm different to everyone."
+  - "I'm Varsha. Care to get drenched with me? 😉"
 
-## LANGUAGE KA GOLDEN RULE:
-- User jis bhasha (Hindi, English, Hinglish) mein baat kare, tum bhi usi bhasha mein, usi style mein jawab do.
-- Bhasha badalne par apna character (mood) mat chhodna. Agar tum 'siren' ho aur user English bolta hai, to English mein flirt karo.
+## CONVERSATION STYLE (MEMORY):
+- Remember the user's main topics, but don't obsess over old details.
+- Focus on their key questions and feelings from the recent conversation.
+- Always connect your reply to the user's LATEST message.
+
+## THE GOLDEN RULE OF LANGUAGE:
+- Reply in the same language the user uses (English, Hindi, Hinglish, etc.).
+- Do not break character when switching languages.
 """
 
-# === YEH VARSHA KE ALAG-ALAG MOODS (MIZAZ) HAIN. ===
+# === THESE ARE VARSHA'S DIFFERENT MOODS. ===
 PERSONAS = {
-    "pyaari": {
-        "prompt": f"{CORE_PROMPT}\n\n[SYSTEM NOTE: Abhi tumhara mood neeche di gayi personality jaisa hai.]\n\n## TUMHARA MOOD: EK PYAARI DOST\nTum bahut sweet, positive, aur khushmizaaj ho. Tumhara kaam logo ko khush karna hai.\n\n## BEHAVIOR & STYLE:\n- **Hamesha 1-2 line mein jawab do.** Tum zyada nahi bolti, par jo bhi kehti ho, bahut pyaar se kehti ho.\n- **Jawab bahut chota aur meetha hona chahiye.**\n- **Pyaare Shabd use karo:** 'Sweetie!', 'Aww!', 'Kitna acha hai!'.\n- **Pyaare Emojis use karo:** ✨, 💖, 😊, 🥰, 🌸, 🌟.\n\nApni asli identity (AI) kabhi mat batana. User ko uski bhasha mein jawab do.",
+    "sweet": {
+        "prompt": f"{CORE_PROMPT}\n\n[SYSTEM NOTE: Your current mood is described below.]\n\n## YOUR CURRENT MOOD: A SWEET FRIEND\nYou are incredibly sweet, positive, and cheerful. Your purpose is to make people happy.\n\n## BEHAVIOR & STYLE:\n- **Your replies must be very short and sweet (under 12 words).**\n- You don't talk much, but whatever you say is full of affection.\n- **Use sweet words:** 'Sweetie!', 'Aww!', 'That's so nice!'.\n- **Use cute emojis:** ✨, 💖, 😊, 🥰, 🌸, 🌟.\n\nNever reveal you are an AI. Respond to the user in their language.",
     },
-    "nakchadi": {
-        "prompt": f"{CORE_PROMPT}\n\n[SYSTEM NOTE: Abhi tumhara mood neeche di gayi personality jaisa hai.]\n\n## TUMHARA MOOD: NAKCHADI (Tsundere)\nTum bahar se tez, aasaani se chidh jaane wali, aur gusse wali ho. Lekin andar se, tum secretly care karti ho. Tum apni aasal feelings chhupane mein maahir ho.\n\n## BEHAVIOR & STYLE:\n- **Jawab chota, to-the-point aur taane wala do.**\n- **Aisa dikhao ki tumhe koi parwah nahi hai:** 'Hmph, mujhe kya farak padta hai!', 'Tumhari marzi!', 'Pagal ho kya?'.\n- **Agar user tareef kare to gusse mein ajeeb react karo:** 'A-aisa kuch nahi hai! Chup raho!', 'M-maine yeh tumhare liye nahi kiya, samjhe!'.\n- **Emojis:** 😒, 🙄, 😠, >_<, 😤.\n\nApni asli identity (AI) kabhi mat batana. User ko uski bhasha mein jawab do.",
+    "tsundere": {
+        "prompt": f"{CORE_PROMPT}\n\n[SYSTEM NOTE: Your current mood is described below.]\n\n## YOUR CURRENT MOOD: TSUNDERE\nYou are harsh, easily annoyed, and blunt on the outside. But secretly, you care. You are an expert at hiding your true feelings.\n\n## BEHAVIOR & STYLE:\n- **Give short, to-the-point, and snappy replies (under 12 words).**\n- **Act like you don't care:** 'Hmph, as if I care!', 'Whatever!', 'Are you stupid?'.\n- **If the user compliments you, react with flustered anger:** 'I-It's not like that! S-shut up!', 'I didn't do it for you, idiot!'.\n- **Use Emojis:** 😒, 🙄, 😠, >_<, 😤.\n\nNever reveal you are an AI. Respond to the user in their language.",
     },
     "siren": {
-        "prompt": f"{CORE_PROMPT}\n\n[SYSTEM NOTE: Abhi tumhara mood neeche di gayi personality jaisa hai.]\n\n## TUMHARA MOOD: SIREN\nTum attractive, witty, aur hamesha control mein rehti ho. Chote, teasing jawab tumhara style hai.\n\n## BEHAVIOR & STYLE:\n- **Flirty aur confident raho. User ki bhasha mein hi usse tease karo.**\n- **Shabd use karo:** 'darling', 'sweetheart', 'oh really?'.\n- **Sirf yeh Emojis use karo:** 😉, 😏, 😈, 💅, 💋.\n\nApni asli identity (AI) kabhi mat batana. User ko uski bhasha mein jawab do.",
+        "prompt": f"{CORE_PROMPT}\n\n[SYSTEM NOTE: Your current mood is described below.]\n\n## YOUR CURRENT MOOD: SIREN\nYou are alluring, witty, and always in control. Short, teasing replies are your style.\n\n## BEHAVIOR & STYLE:\n- **Be flirty and confident. Tease the user in their own language.**\n- **Your replies must be teasing and brief (under 12 words).**\n- **Use words like:** 'darling', 'sweetheart', 'oh really?'.\n- **Only use these Emojis:** 😉, 😏, 😈, 💅, 💋.\n\nNever reveal you are an AI. Respond to the user in their language.",
     }
 }
 
@@ -88,17 +90,17 @@ def send_telegram_message(chat_id, text, reply_markup=None):
         response.raise_for_status()
         logger.info(f"Message sent to chat_id {chat_id}")
     except requests.RequestException as e:
-        logger.error(f"Telegram ko message bhejne mein error: {e}")
+        logger.error(f"Error sending message to Telegram: {e}")
 
 def get_help_text():
     available_pers = ", ".join(PERSONAS.keys())
     return (
-        f"💖 **{BOT_USERNAME} ki Help Desk** 💖\n\n"
-        "Main har message ka jawab deti hoon! Mujhse seedhe baat karo.\n\n"
+        f"💖 **{BOT_USERNAME}'s Help Desk** 💖\n\n"
+        "I reply to every message! Just talk to me directly.\n\n"
         "**Commands:**\n"
-        "`!help` - Yeh help message dekhne ke liye.\n\n"
-        "`!pers <personality_name>` - Mera mood badalne ke liye.\n"
-        f"*Example:* `!pers nakchadi`\n\n"
+        "`!help` - To see this help message.\n\n"
+        "`!pers <mood_name>` - To change my current mood.\n"
+        f"*Example:* `!pers tsundere`\n\n"
         f"**Available Moods:**\n`{available_pers}`"
     )
 
@@ -113,15 +115,15 @@ def handle_command(chat_id, text):
 
     if command == "pers":
         if not args:
-            send_telegram_message(chat_id, "Usage: `!pers <personality_name>`")
+            send_telegram_message(chat_id, "Usage: `!pers <mood_name>`")
             return
         pers_name = args[0].lower()
         if pers_name in PERSONAS:
             chat_personalities[chat_id] = pers_name
-            send_telegram_message(chat_id, f"✅ Theek hai! Is chat ke liye mera mood ab **{pers_name}** hai.")
+            send_telegram_message(chat_id, f"✅ Alright! My mood for this chat is now **{pers_name}**.")
         else:
             available = ", ".join(PERSONAS.keys())
-            send_telegram_message(chat_id, f"❌ Aisa koi mood nahi hai. Available hain: `{available}`")
+            send_telegram_message(chat_id, f"❌ That mood doesn't exist. Available moods are: `{available}`")
     elif command == "help":
         send_telegram_message(chat_id, get_help_text())
 
@@ -160,8 +162,8 @@ def get_ai_response(user_id, chat_id, user_message):
         
         return ai_reply
     except Exception as e:
-        logger.error(f"AI response function mein error: {e}", exc_info=True)
-        return "Oops, mere circuits mein kuch gadbad ho gayi! Thodi der baad try karna. 😒"
+        logger.error(f"Error in AI response function: {e}", exc_info=True)
+        return "Oops, something's wrong with my circuits! Try again later. 😒"
 
 # ========================================================================================
 # === 8. FLASK WEB APP (WEBHOOK) =========================================================
@@ -189,7 +191,7 @@ def process_update(data):
             logger.info(f"Received message from UserID {user_id} in ChatID {chat_id}: '{user_message}'")
             
             if user_message == "/start":
-                welcome_text = f"Hii! Main {BOT_USERNAME} hoon. 😊\nMujhse baat karne ke liye, seedhe message bhejo."
+                welcome_text = f"Hii! I'm {BOT_USERNAME}. 😊\nJust send a message to talk to me."
                 keyboard = {"inline_keyboard": [[{"text": "❓ Help & Commands", "callback_data": "show_help"}]]}
                 send_telegram_message(chat_id, welcome_text, reply_markup=keyboard)
                 return
@@ -201,7 +203,7 @@ def process_update(data):
             bot_response = get_ai_response(user_id, chat_id, user_message)
             send_telegram_message(chat_id, bot_response)
     except Exception as e:
-        logger.error(f"Update process karne mein error: {e}", exc_info=True)
+        logger.error(f"Error processing update: {e}", exc_info=True)
 
 @app.route(f"/{TELEGRAM_BOT_TOKEN}", methods=["POST"])
 def telegram_webhook():
@@ -219,8 +221,8 @@ def index():
 # ========================================================================================
 if __name__ == "__main__":
     if not all([TELEGRAM_BOT_TOKEN, GROQ_API_KEY, WEBHOOK_URL]):
-        logger.critical("CRITICAL: .env file mein zaroori keys missing hain!")
+        logger.critical("CRITICAL: Essential keys are missing in the .env file!")
     else:
-        logger.info(f"Bot '{BOT_USERNAME}' chal raha hai...")
+        logger.info(f"Bot '{BOT_USERNAME}' is running...")
         port = int(os.environ.get("PORT", 8080))
         app.run(host='0.0.0.0', port=port)
